@@ -4,7 +4,7 @@ This repository contains the solution for a technical case study, organized by e
 
 ## Tech Stack Documentation
 
-> **[View Technical Documentation on Notion](https://your-notion-link-here.com)**
+> **[View Technical Documentation on Notion](https://rebrand.ly/hotmart-tech-case)**
 >
 > A detailed description of the technology stack that enables this solution, including project context, data schema, and modeling decisions.
 
