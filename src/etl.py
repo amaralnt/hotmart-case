@@ -13,7 +13,7 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 def read_events(table_name: str):
-    # Read events from source files
+    """ Read events from source files. """
     file_map = {
         'purchase': 'purchase.csv',
         'product_item': 'product_item.csv',
@@ -31,7 +31,7 @@ def read_events(table_name: str):
 
 
 def get_latest_event_per_purchase(df, event_date, cols: list):
-    # For each purchase_id, returns the latest event of the day
+    """ For each purchase_id, returns the latest event of the day. """
     day_events = df.filter(col("transaction_date") == event_date)
     
     if day_events.count() == 0:
@@ -47,7 +47,7 @@ def get_latest_event_per_purchase(df, event_date, cols: list):
 
 
 def get_previous_state(snapshot_df, purchase_ids: list, before_date):
-    # Search for the most recent state of each purchase BEFORE a date (carry forward)
+    """ Search for the most recent state of each purchase BEFORE a date (carry forward). """
     if snapshot_df is None or not purchase_ids or snapshot_df.count() == 0:
         return None
     
@@ -66,7 +66,7 @@ def get_previous_state(snapshot_df, purchase_ids: list, before_date):
 
 
 def consolidate_events(snapshot_date, transaction_date, purchase_latest, product_latest, extra_latest, previous_snapshot):
-    # Consolidate events from the 3 tables into a single row per purchase_id
+    """ Consolidate events from the 3 tables into a single row per purchase_id. """
 
     # Collect all purchases with event on the day
     all_purchase_ids = []
@@ -125,7 +125,7 @@ def consolidate_events(snapshot_date, transaction_date, purchase_latest, product
 
 
 def process_daily_snapshot(processing_date, snapshot_df):
-    # Process D-1: events of yesterday become today's snapshot
+    """ Process D-1: events of yesterday become today's snapshot. """
     event_date = processing_date - timedelta(days=1)
     
     purchase_latest = get_latest_event_per_purchase(
@@ -146,7 +146,7 @@ def process_daily_snapshot(processing_date, snapshot_df):
 
 
 def update_is_current(full_snapshot):
-    # Update is_current to TRUE only for the latest snapshot of each purchase
+    """ Update is_current to TRUE only for the latest snapshot of each purchase. """
     if full_snapshot is None or full_snapshot.count() == 0:
         return full_snapshot
     
@@ -157,7 +157,7 @@ def update_is_current(full_snapshot):
 
 
 def run_etl():
-    # Execute ETL for all days with events
+    """ Execute ETL for all days with events. """
     
     # Find all event dates
     all_dates = read_events('purchase').select("transaction_date").union(
@@ -183,7 +183,8 @@ def run_etl():
     full_snapshot = full_snapshot.dropDuplicates(["snapshot_date", "purchase_id"])
 
     # Save dataset
-    full_snapshot.write.mode("append") \
+    full_snapshot.write.mode("overwrite") \
+                 .partitionBy("snapshot_date") \
                  .parquet(f"{OUTPUT_PATH}/gmv_daily_snapshot")
 
     return full_snapshot
